@@ -1,0 +1,18 @@
+.env
+.env.local
+*.log
+*.bak
+.DS_Store
+
+# Go build artifacts
+/munin
+/out
+*.exe
+
+# IDE
+.idea/
+.vscode/
+
+# Test coverage
+*.out
+coverage.html
