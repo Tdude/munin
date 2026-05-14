@@ -33,7 +33,7 @@ set -euo pipefail
 # ────────────────────────────────────────────────────────────────
 # Configuration — override via env if needed
 # ────────────────────────────────────────────────────────────────
-PROJECT_ID="${PROJECT_ID:-muntra-prod}"
+PROJECT_ID="${PROJECT_ID:-heymy-dev}"
 REGION="${REGION:-europe-north1}"
 SERVICE_NAME="${SERVICE_NAME:-muntra}"
 IMAGE_REPO="${IMAGE_REPO:-muntra}"
@@ -42,8 +42,9 @@ IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${IMAGE_REPO}/${SERVICE_NAME}:${IM
 
 # Cloud SQL: the script will reuse an existing instance with this name or
 # create one if it doesn't exist (db-f1-micro by default, ~\$7-8/mo).
-# To reuse Heymy's instance instead: PROJECT_ID=heymy-dev CLOUDSQL_INSTANCE=heymy-db.
-CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-muntra-db}"
+# Default targets Heymy's existing heymy-db instance for cost-sharing.
+# For an own-project deployment: PROJECT_ID=muntra-prod CLOUDSQL_INSTANCE=muntra-db.
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-heymy-db}"
 CLOUDSQL_TIER="${CLOUDSQL_TIER:-db-f1-micro}"
 CLOUDSQL_VERSION="${CLOUDSQL_VERSION:-POSTGRES_16}"
 DB_NAME="${DB_NAME:-muntra}"

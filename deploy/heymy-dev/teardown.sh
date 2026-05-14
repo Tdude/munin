@@ -9,12 +9,12 @@
 
 set -euo pipefail
 
-PROJECT_ID="${PROJECT_ID:-muntra-prod}"
+PROJECT_ID="${PROJECT_ID:-heymy-dev}"
 REGION="${REGION:-europe-north1}"
 SERVICE_NAME="${SERVICE_NAME:-muntra}"
 REDIS_NAME="${REDIS_NAME:-muntra-redis}"
 CONNECTOR_NAME="${CONNECTOR_NAME:-muntra-connector}"
-CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-muntra-db}"
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-heymy-db}"
 DB_NAME="${DB_NAME:-muntra}"
 DB_ROLE="${DB_ROLE:-muntra}"
 
