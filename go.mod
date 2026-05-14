@@ -1,4 +1,4 @@
-module github.com/Tdude/munin
+module github.com/Tdude/muntra
 
 go 1.25.0
 

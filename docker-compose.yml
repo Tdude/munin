@@ -1,14 +1,14 @@
-# Standalone Munin stack. Spin up with:
+# Standalone Muntra stack. Spin up with:
 #
 #   cp .env.example .env && $EDITOR .env
 #   docker compose up -d
 #
-# Three containers — all sit on the default compose network. Munin binds
+# Three containers — all sit on the default compose network. Muntra binds
 # only to 127.0.0.1:8090 by default; front it with your own nginx/Caddy
 # for public access (see docs/nginx.example.conf).
 
 services:
-  munin-redis:
+  muntra-redis:
     image: redis:7-alpine
     # Hard memory cap is the whole point — bounded buffer vs unbounded leak.
     command:
@@ -22,7 +22,7 @@ services:
         "",
       ]
     volumes:
-      - munin_redis_data:/data
+      - muntra_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -30,49 +30,49 @@ services:
       retries: 5
     restart: unless-stopped
 
-  munin-db:
+  muntra-db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: munin
-      POSTGRES_USER: munin
-      POSTGRES_PASSWORD: ${MUNIN_DB_PASSWORD:?MUNIN_DB_PASSWORD required in .env}
+      POSTGRES_DB: muntra
+      POSTGRES_USER: muntra
+      POSTGRES_PASSWORD: ${MUNTRA_DB_PASSWORD:?MUNTRA_DB_PASSWORD required in .env}
     volumes:
-      - munin_db_data:/var/lib/postgresql/data
+      - muntra_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U munin -d munin"]
+      test: ["CMD-SHELL", "pg_isready -U muntra -d muntra"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  munin:
+  muntra:
     build:
       context: .
       dockerfile: Dockerfile
     # Default binds only to localhost so the public surface is yours to
-    # decide via reverse proxy. Override MUNIN_HOST_PORT to expose elsewhere.
+    # decide via reverse proxy. Override MUNTRA_HOST_PORT to expose elsewhere.
     ports:
-      - "${MUNIN_HOST_PORT:-127.0.0.1:8090}:8090"
+      - "${MUNTRA_HOST_PORT:-127.0.0.1:8090}:8090"
     environment:
-      MUNIN_HTTP_ADDR: ":8090"
-      MUNIN_REDIS_URL: redis://munin-redis:6379/0
-      MUNIN_POSTGRES_DSN: postgres://munin:${MUNIN_DB_PASSWORD:?}@munin-db:5432/munin?sslmode=disable
-      MUNIN_ALLOWED_SITES: ${MUNIN_ALLOWED_SITES:?MUNIN_ALLOWED_SITES required (comma-separated site ids)}
-      MUNIN_SITE_ORIGINS: ${MUNIN_SITE_ORIGINS:-}
-      MUNIN_DASHBOARD_TOKEN: ${MUNIN_DASHBOARD_TOKEN:?MUNIN_DASHBOARD_TOKEN required (shared bearer for /api/*)}
-      MUNIN_FLUSH_INTERVAL: ${MUNIN_FLUSH_INTERVAL:-60s}
-      MUNIN_FLUSH_BATCH_SIZE: ${MUNIN_FLUSH_BATCH_SIZE:-500}
-      MUNIN_ROLLUP_INTERVAL: ${MUNIN_ROLLUP_INTERVAL:-15m}
+      MUNTRA_HTTP_ADDR: ":8090"
+      MUNTRA_REDIS_URL: redis://muntra-redis:6379/0
+      MUNTRA_POSTGRES_DSN: postgres://muntra:${MUNTRA_DB_PASSWORD:?}@muntra-db:5432/muntra?sslmode=disable
+      MUNTRA_ALLOWED_SITES: ${MUNTRA_ALLOWED_SITES:?MUNTRA_ALLOWED_SITES required (comma-separated site ids)}
+      MUNTRA_SITE_ORIGINS: ${MUNTRA_SITE_ORIGINS:-}
+      MUNTRA_DASHBOARD_TOKEN: ${MUNTRA_DASHBOARD_TOKEN:?MUNTRA_DASHBOARD_TOKEN required (shared bearer for /api/*)}
+      MUNTRA_FLUSH_INTERVAL: ${MUNTRA_FLUSH_INTERVAL:-60s}
+      MUNTRA_FLUSH_BATCH_SIZE: ${MUNTRA_FLUSH_BATCH_SIZE:-500}
+      MUNTRA_ROLLUP_INTERVAL: ${MUNTRA_ROLLUP_INTERVAL:-15m}
     healthcheck:
-      test: ["CMD", "/munin", "healthcheck"]
+      test: ["CMD", "/muntra", "healthcheck"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
     depends_on:
-      munin-redis:
+      muntra-redis:
         condition: service_healthy
-      munin-db:
+      muntra-db:
         condition: service_healthy
     restart: unless-stopped
     deploy:
@@ -81,5 +81,5 @@ services:
           memory: 128M
 
 volumes:
-  munin_redis_data:
-  munin_db_data:
+  muntra_redis_data:
+  muntra_db_data:

@@ -8,7 +8,7 @@
   if (!endpoint) {
     try {
       // Derive /collect relative to script.src so subpath hosting
-      // (e.g. https://obojen.com/munin/script.js → /munin/collect) works
+      // (e.g. https://obojen.com/muntra/script.js → /muntra/collect) works
       // without an explicit data-endpoint attribute.
       var u = new URL(script.src);
       u.search = '';
@@ -72,5 +72,5 @@
 
   send('pageview');
 
-  window.munin = { track: send };
+  window.muntra = { track: send };
 })();

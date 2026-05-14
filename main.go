@@ -11,16 +11,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Tdude/munin/internal/api"
-	"github.com/Tdude/munin/internal/auth"
-	"github.com/Tdude/munin/internal/collect"
-	"github.com/Tdude/munin/internal/config"
-	"github.com/Tdude/munin/internal/flush"
-	"github.com/Tdude/munin/internal/migrate"
-	"github.com/Tdude/munin/internal/rollup"
-	"github.com/Tdude/munin/internal/salt"
-	"github.com/Tdude/munin/internal/store"
-	"github.com/Tdude/munin/internal/tracker"
+	"github.com/Tdude/muntra/internal/api"
+	"github.com/Tdude/muntra/internal/auth"
+	"github.com/Tdude/muntra/internal/collect"
+	"github.com/Tdude/muntra/internal/config"
+	"github.com/Tdude/muntra/internal/flush"
+	"github.com/Tdude/muntra/internal/migrate"
+	"github.com/Tdude/muntra/internal/rollup"
+	"github.com/Tdude/muntra/internal/salt"
+	"github.com/Tdude/muntra/internal/store"
+	"github.com/Tdude/muntra/internal/tracker"
 )
 
 func main() {
@@ -112,10 +112,10 @@ func main() {
 	logger.Info("bye")
 }
 
-// runHealthcheck is invoked as `/munin healthcheck` by the Docker healthcheck.
+// runHealthcheck is invoked as `/muntra healthcheck` by the Docker healthcheck.
 // The distroless base image has no wget/curl, so the binary self-checks.
 func runHealthcheck() {
-	addr := os.Getenv("MUNIN_HTTP_ADDR")
+	addr := os.Getenv("MUNTRA_HTTP_ADDR")
 	if addr == "" {
 		addr = ":8090"
 	}

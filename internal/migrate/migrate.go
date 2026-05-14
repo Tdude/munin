@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/store"
 )
 
 func Apply(ctx context.Context, pg *store.Postgres, dir string) error {

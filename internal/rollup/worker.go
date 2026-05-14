@@ -17,7 +17,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/store"
 )
 
 type Worker struct {
