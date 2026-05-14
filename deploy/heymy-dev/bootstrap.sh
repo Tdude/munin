@@ -33,14 +33,19 @@ set -euo pipefail
 # ────────────────────────────────────────────────────────────────
 # Configuration — override via env if needed
 # ────────────────────────────────────────────────────────────────
-PROJECT_ID="${PROJECT_ID:-heymy-dev}"
+PROJECT_ID="${PROJECT_ID:-muntra-prod}"
 REGION="${REGION:-europe-north1}"
 SERVICE_NAME="${SERVICE_NAME:-muntra}"
 IMAGE_REPO="${IMAGE_REPO:-muntra}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${IMAGE_REPO}/${SERVICE_NAME}:${IMAGE_TAG}"
 
-CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-heymy-db}"
+# Cloud SQL: the script will reuse an existing instance with this name or
+# create one if it doesn't exist (db-f1-micro by default, ~\$7-8/mo).
+# To reuse Heymy's instance instead: PROJECT_ID=heymy-dev CLOUDSQL_INSTANCE=heymy-db.
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-muntra-db}"
+CLOUDSQL_TIER="${CLOUDSQL_TIER:-db-f1-micro}"
+CLOUDSQL_VERSION="${CLOUDSQL_VERSION:-POSTGRES_16}"
 DB_NAME="${DB_NAME:-muntra}"
 DB_ROLE="${DB_ROLE:-muntra}"
 
@@ -137,17 +142,34 @@ gcloud config set project "$PROJECT_ID" >/dev/null
 ACTIVE=$(gcloud config get-value account 2>/dev/null)
 ok "gcloud authed as $ACTIVE on project $PROJECT_ID"
 
+# Detect whether Cloud SQL needs creating so the cost preview is accurate.
+SQL_INSTANCE_EXISTS=false
+if gcloud sql instances describe "$CLOUDSQL_INSTANCE" --project="$PROJECT_ID" >/dev/null 2>&1; then
+  SQL_INSTANCE_EXISTS=true
+fi
+
 step "About to provision Muntra in $PROJECT_ID / $REGION"
 cat <<EOF
   Service:           Cloud Run        $SERVICE_NAME
   Image:             Artifact Reg.    $IMAGE
-  Database:          Cloud SQL        $CLOUDSQL_INSTANCE → db: $DB_NAME, role: $DB_ROLE
+  Database:          Cloud SQL        $CLOUDSQL_INSTANCE $($SQL_INSTANCE_EXISTS && echo "(reusing)" || echo "(WILL BE CREATED, $CLOUDSQL_TIER)")
+                                      db: $DB_NAME, role: $DB_ROLE
   Cache:             Memorystore      $REDIS_NAME (Basic, ${REDIS_SIZE_GB}GB)
   Network:           VPC Connector    $CONNECTOR_NAME ($CONNECTOR_RANGE in $VPC_NETWORK)
   Site IDs accepted: $ALLOWED_SITES
   Origin allowlist:  ${SITE_ORIGINS:-<none — set SITE_ORIGINS env to harden>}
 
-  Estimated recurring cost: ~\$45-55/month (~470-580 SEK)
+  Estimated recurring cost:
+    - Memorystore Basic 1GB:      ~\$35
+    - VPC Connector (idle):       ~\$8-12
+    - Cloud Run (scale-to-zero):  ~\$0-3
+$($SQL_INSTANCE_EXISTS \
+    && echo "    - Cloud SQL (shared):         ~\$0 (instance reused)" \
+    || echo "    - Cloud SQL $CLOUDSQL_TIER:        ~\$7-8 (new instance)")
+    ─────────────────────────────────────
+$($SQL_INSTANCE_EXISTS \
+    && echo "    Total:                        ~\$45-55/month (≈ 470-580 SEK)" \
+    || echo "    Total:                        ~\$53-63/month (≈ 555-660 SEK)")
 EOF
 echo
 confirm "Proceed?" || { echo "Aborted."; exit 1; }
@@ -183,8 +205,31 @@ DB_PASSWORD=$(gcloud secrets versions access latest --secret=MUNTRA_DB_PASSWORD 
 DASHBOARD_TOKEN=$(gcloud secrets versions access latest --secret=MUNTRA_DASHBOARD_TOKEN --project="$PROJECT_ID")
 
 # ────────────────────────────────────────────────────────────────
-# Cloud SQL: database + role
+# Cloud SQL: instance + database + role
 # ────────────────────────────────────────────────────────────────
+step "Cloud SQL: ensuring instance $CLOUDSQL_INSTANCE"
+if ! gcloud sql instances describe "$CLOUDSQL_INSTANCE" --project="$PROJECT_ID" >/dev/null 2>&1; then
+  info "instance $CLOUDSQL_INSTANCE not found — creating ($CLOUDSQL_TIER, $CLOUDSQL_VERSION, $REGION)"
+  info "this takes ~10 minutes"
+  gcloud sql instances create "$CLOUDSQL_INSTANCE" \
+    --project="$PROJECT_ID" \
+    --region="$REGION" \
+    --database-version="$CLOUDSQL_VERSION" \
+    --tier="$CLOUDSQL_TIER" \
+    --storage-type=SSD \
+    --storage-size=10 \
+    --availability-type=zonal \
+    --backup \
+    --backup-start-time=03:00 \
+    --retained-backups-count=7 \
+    --maintenance-window-day=SUN \
+    --maintenance-window-hour=04 \
+    --quiet
+  ok "instance $CLOUDSQL_INSTANCE created"
+else
+  ok "instance $CLOUDSQL_INSTANCE already exists"
+fi
+
 step "Cloud SQL: provisioning database + role on $CLOUDSQL_INSTANCE"
 
 if ! gcloud sql databases describe "$DB_NAME" \

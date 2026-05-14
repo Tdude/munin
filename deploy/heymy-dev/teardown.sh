@@ -9,17 +9,24 @@
 
 set -euo pipefail
 
-PROJECT_ID="${PROJECT_ID:-heymy-dev}"
+PROJECT_ID="${PROJECT_ID:-muntra-prod}"
 REGION="${REGION:-europe-north1}"
 SERVICE_NAME="${SERVICE_NAME:-muntra}"
 REDIS_NAME="${REDIS_NAME:-muntra-redis}"
 CONNECTOR_NAME="${CONNECTOR_NAME:-muntra-connector}"
-CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-heymy-db}"
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-muntra-db}"
 DB_NAME="${DB_NAME:-muntra}"
 DB_ROLE="${DB_ROLE:-muntra}"
 
 PURGE_SECRETS=false
-[[ "${1:-}" == "--purge-secrets" ]] && PURGE_SECRETS=true
+DELETE_SQL_INSTANCE=false
+for arg in "$@"; do
+  case "$arg" in
+    --purge-secrets)      PURGE_SECRETS=true ;;
+    --delete-sql-instance) DELETE_SQL_INSTANCE=true ;;
+    *) echo "Unknown flag: $arg"; exit 2 ;;
+  esac
+done
 
 ok()   { printf "  \033[32m✓\033[0m %s\n" "$*"; }
 info() { printf "  \033[36m→\033[0m %s\n" "$*"; }
@@ -58,6 +65,15 @@ gcloud sql databases delete "$DB_NAME" --instance="$CLOUDSQL_INSTANCE" \
 gcloud sql users delete "$DB_ROLE" --instance="$CLOUDSQL_INSTANCE" \
   --project="$PROJECT_ID" --quiet 2>/dev/null \
   && ok "role $DB_ROLE removed" || info "role $DB_ROLE absent"
+
+if $DELETE_SQL_INSTANCE; then
+  step "Cloud SQL instance (--delete-sql-instance)"
+  gcloud sql instances delete "$CLOUDSQL_INSTANCE" --project="$PROJECT_ID" --quiet 2>/dev/null \
+    && ok "instance $CLOUDSQL_INSTANCE deleted (~\$7-8/mo cost stops here)" \
+    || info "instance $CLOUDSQL_INSTANCE absent"
+else
+  info "instance $CLOUDSQL_INSTANCE kept — use --delete-sql-instance to remove it (only if NOT shared with other workloads)"
+fi
 
 if $PURGE_SECRETS; then
   step "Secrets"

@@ -1,9 +1,37 @@
-# Deploy Muntra to `heymy-dev` Cloud Run
+# Deploy Muntra to Cloud Run
 
-One-shot deployment of Muntra as a Cloud Run service in the `heymy-dev` GCP
-project, region `europe-north1` (Stockholm). Reuses Heymy's existing Cloud SQL
-instance (separate database + role, no data mingling) and provisions
-Memorystore Redis + a Serverless VPC Access Connector.
+One-shot deployment of Muntra as a Cloud Run service in a GCP project of your
+choice, region `europe-north1` (Stockholm). Provisions everything Muntra needs:
+Cloud SQL Postgres + Memorystore Redis + Serverless VPC Connector + Secret
+Manager entries + Cloud Run service.
+
+## Pick a project model first
+
+**Recommended: your own GCP project (`muntra-prod`).** Muntra is your service;
+Heymy is one of many possible consumers (idunworks, obojen, etc. can point at
+the same instance). Cross-project boundary = clean HTTPS API, no shared IAM.
+Cost: ~$53-63/month.
+
+**Alternative: Heymy's `heymy-dev` project.** Cheaper by ~$8/month because the
+existing `heymy-db` Cloud SQL instance is reused. Requires that Wilmer grant
+your identity Owner/Editor on `heymy-dev`:
+
+```bash
+# Wilmer runs once, on heymy-dev:
+gcloud projects add-iam-policy-binding heymy-dev \
+  --member="user:YOUR_EMAIL@gmail.com" \
+  --role="roles/editor"
+```
+
+Billing then lands on Wilmer's billing account. To use this mode, pass:
+
+```bash
+PROJECT_ID=heymy-dev CLOUDSQL_INSTANCE=heymy-db \
+  bash deploy/heymy-dev/bootstrap.sh
+```
+
+The script auto-detects whether the named instance exists and reuses it if so,
+otherwise creates a fresh one.
 
 ## Cost — read before running
 
@@ -13,17 +41,16 @@ Recurring monthly cost in `europe-north1`:
 |---|---|---|
 | Memorystore Redis | Basic, 1 GB | ~$35 |
 | Serverless VPC Access Connector | 2× e2-micro instances | ~$8–12 (idle) |
+| Cloud SQL `muntra-db` instance | db-f1-micro (own project) | ~$7-8 |
+| Cloud SQL `muntra` database | (shared instance — heymy-dev mode) | ~$0 |
 | Cloud Run service | scale-to-zero, low traffic | ~$0–3 |
-| Cloud SQL `muntra` database | marginal, same instance as `heymy` | ~$0 |
-| Artifact Registry | one ~25 MB image | ~$0 |
-| Secret Manager | 4 secrets | ~$0 |
-| **Total** | | **~$45–55 / month** |
-| | | **≈ 470–580 SEK / month** |
+| Artifact Registry, Secret Manager | small | ~$0 |
+| **Total — own project** | | **~$53–63 / month (≈ 555–660 SEK)** |
+| **Total — heymy-dev shared** | | **~$45–55 / month (≈ 470–580 SEK)** |
 
-Heymy's existing budget alert is 1000 SEK/month with auto-disable. This deploy
-pushes ~50% of that budget into Muntra. If that's too much, the cheaper
-alternative is to host Redis on Upstash (~$10/mo, EU regions, but adds a US-
-incorporated sub-processor to your DPA — see "Cost reduction" below).
+If that's too much, the cheaper alternative is to host Redis on Upstash
+(~$10/mo, EU regions, but adds a US-incorporated sub-processor to your DPA
+— see "Cost reduction" below). With Upstash + own project: ~$28-33/mo.
 
 ## Prereqs (on your workstation)
 
@@ -31,10 +58,32 @@ incorporated sub-processor to your DPA — see "Cost reduction" below).
 brew install --cask google-cloud-sdk
 gcloud auth login
 gcloud auth application-default login
-gcloud config set project heymy-dev
 ```
 
-You must be Project Owner / Editor on `heymy-dev`.
+You must be Project Owner / Editor on the target project.
+
+### Creating your own project (recommended path)
+
+```bash
+# Pick a unique project ID; "muntra-prod" or "tdude-muntra" both work.
+PROJECT_ID=muntra-prod
+
+# Find your billing account ID:
+gcloud billing accounts list
+
+# Create the project and link billing:
+gcloud projects create "$PROJECT_ID" --name="Muntra"
+gcloud billing projects link "$PROJECT_ID" --billing-account=BILLING_ACCOUNT_ID
+
+# (Optional but recommended) Add a budget alert mirroring Heymy's 1000 SEK guard:
+gcloud billing budgets create \
+  --billing-account=BILLING_ACCOUNT_ID \
+  --display-name="Muntra monthly cap" \
+  --budget-amount=100 \
+  --threshold-rule=percent=0.5 \
+  --threshold-rule=percent=0.9 \
+  --threshold-rule=percent=1.0
+```
 
 ## Deploy
 
