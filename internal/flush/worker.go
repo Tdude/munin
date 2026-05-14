@@ -7,13 +7,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Tdude/munin/internal/event"
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/event"
+	"github.com/Tdude/muntra/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 )
 
-const redisListScan = "munin:events:*"
+const redisListScan = "muntra:events:*"
 
 type Worker struct {
 	redis     *store.Redis

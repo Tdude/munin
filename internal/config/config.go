@@ -26,24 +26,24 @@ type Config struct {
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		HTTPAddr:       getEnv("MUNIN_HTTP_ADDR", ":8090"),
-		RedisURL:       getEnv("MUNIN_REDIS_URL", "redis://localhost:6379/0"),
-		PostgresDSN:    os.Getenv("MUNIN_POSTGRES_DSN"),
-		AllowedSites:   parseList(getEnv("MUNIN_ALLOWED_SITES", "")),
-		FlushInterval:  parseDuration(getEnv("MUNIN_FLUSH_INTERVAL", "60s"), 60*time.Second),
-		FlushBatchSize: parseInt(getEnv("MUNIN_FLUSH_BATCH_SIZE", "500"), 500),
-		RollupInterval: parseDuration(getEnv("MUNIN_ROLLUP_INTERVAL", "15m"), 15*time.Minute),
-		DashboardToken: os.Getenv("MUNIN_DASHBOARD_TOKEN"),
-		SiteOrigins:    parseSiteOrigins(os.Getenv("MUNIN_SITE_ORIGINS")),
+		HTTPAddr:       getEnv("MUNTRA_HTTP_ADDR", ":8090"),
+		RedisURL:       getEnv("MUNTRA_REDIS_URL", "redis://localhost:6379/0"),
+		PostgresDSN:    os.Getenv("MUNTRA_POSTGRES_DSN"),
+		AllowedSites:   parseList(getEnv("MUNTRA_ALLOWED_SITES", "")),
+		FlushInterval:  parseDuration(getEnv("MUNTRA_FLUSH_INTERVAL", "60s"), 60*time.Second),
+		FlushBatchSize: parseInt(getEnv("MUNTRA_FLUSH_BATCH_SIZE", "500"), 500),
+		RollupInterval: parseDuration(getEnv("MUNTRA_ROLLUP_INTERVAL", "15m"), 15*time.Minute),
+		DashboardToken: os.Getenv("MUNTRA_DASHBOARD_TOKEN"),
+		SiteOrigins:    parseSiteOrigins(os.Getenv("MUNTRA_SITE_ORIGINS")),
 	}
 	if cfg.PostgresDSN == "" {
-		return nil, fmt.Errorf("MUNIN_POSTGRES_DSN required")
+		return nil, fmt.Errorf("MUNTRA_POSTGRES_DSN required")
 	}
 	if len(cfg.AllowedSites) == 0 {
-		return nil, fmt.Errorf("MUNIN_ALLOWED_SITES required (comma-separated site ids)")
+		return nil, fmt.Errorf("MUNTRA_ALLOWED_SITES required (comma-separated site ids)")
 	}
 	if cfg.DashboardToken == "" {
-		return nil, fmt.Errorf("MUNIN_DASHBOARD_TOKEN required (shared secret for /api/* endpoints)")
+		return nil, fmt.Errorf("MUNTRA_DASHBOARD_TOKEN required (shared secret for /api/* endpoints)")
 	}
 	return cfg, nil
 }
@@ -82,7 +82,7 @@ func parseInt(s string, def int) int {
 	return n
 }
 
-// parseSiteOrigins reads MUNIN_SITE_ORIGINS in the form:
+// parseSiteOrigins reads MUNTRA_SITE_ORIGINS in the form:
 //   site_id:host1,host2|site_id:host3|...
 // e.g. "obojen:obojen.com,www.obojen.com|rebelkayaks:rebelkayaks.eu"
 func parseSiteOrigins(s string) map[string]map[string]bool {

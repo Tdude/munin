@@ -1,6 +1,6 @@
-# Contributing to Munin
+# Contributing to Muntra
 
-PRs and issues are welcome. Munin is intentionally small — the goal is to stay readable and roughly fit in your head.
+PRs and issues are welcome. Muntra is intentionally small — the goal is to stay readable and roughly fit in your head.
 
 ## What I'd love help with
 
@@ -15,7 +15,7 @@ PRs and issues are welcome. Munin is intentionally small — the goal is to stay
 cp .env.example .env
 $EDITOR .env                              # set passwords + sites
 docker compose up -d
-docker logs -f munin-munin-1               # follow the binary
+docker logs -f muntra-muntra-1               # follow the binary
 ```
 
 The Go binary auto-applies migrations on startup, so `schema/*.sql` changes pick up on next restart.
@@ -23,10 +23,10 @@ The Go binary auto-applies migrations on startup, so `schema/*.sql` changes pick
 For a fast Go-only dev loop (no Docker rebuild on every edit), point the binary at a local Postgres + Redis:
 
 ```sh
-MUNIN_POSTGRES_DSN='postgres://munin:dev@127.0.0.1:5432/munin?sslmode=disable' \
-MUNIN_REDIS_URL='redis://127.0.0.1:6379/0' \
-MUNIN_ALLOWED_SITES='dev' \
-MUNIN_DASHBOARD_TOKEN='devtoken' \
+MUNTRA_POSTGRES_DSN='postgres://muntra:dev@127.0.0.1:5432/muntra?sslmode=disable' \
+MUNTRA_REDIS_URL='redis://127.0.0.1:6379/0' \
+MUNTRA_ALLOWED_SITES='dev' \
+MUNTRA_DASHBOARD_TOKEN='devtoken' \
 go run .
 ```
 

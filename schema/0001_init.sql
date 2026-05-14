@@ -1,5 +1,5 @@
--- Munin analytics schema, version 1.
--- Apply manually for now: psql "$MUNIN_POSTGRES_DSN" -f schema/0001_init.sql
+-- Muntra analytics schema, version 1.
+-- Apply manually for now: psql "$MUNTRA_POSTGRES_DSN" -f schema/0001_init.sql
 
 CREATE TABLE IF NOT EXISTS raw_events (
     id                  BIGSERIAL PRIMARY KEY,

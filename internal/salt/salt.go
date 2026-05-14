@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/store"
 	"github.com/redis/go-redis/v9"
 )
 
 const (
-	redisKeyPrefix = "munin:daily_salt:"
+	redisKeyPrefix = "muntra:daily_salt:"
 	rotationTTL    = 25 * time.Hour
 	checkInterval  = 1 * time.Minute
 )

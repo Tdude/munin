@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/store"
 )
 
 type Handler struct {

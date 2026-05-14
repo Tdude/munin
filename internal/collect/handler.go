@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tdude/munin/internal/event"
-	"github.com/Tdude/munin/internal/salt"
-	"github.com/Tdude/munin/internal/store"
+	"github.com/Tdude/muntra/internal/event"
+	"github.com/Tdude/muntra/internal/salt"
+	"github.com/Tdude/muntra/internal/store"
 	"github.com/mileusna/useragent"
 )
 
 const (
 	maxBodyBytes    = 8 * 1024
-	redisKeyPattern = "munin:events:"
+	redisKeyPattern = "muntra:events:"
 )
 
 func NewHandler(r *store.Redis, s *salt.Service, allowedSites map[string]bool, siteOrigins map[string]map[string]bool) http.HandlerFunc {
